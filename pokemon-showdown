@@ -21,7 +21,8 @@
 // of interfacing with the simulator from non-JS languages. Otherwise we error
 // on the side of caution and run `node build` to ensure we're always running
 // with the latest code.
-
+#!/usr/bin/env node
+'use strict';
 
 const express = require('express');
 const fs = require('fs');
