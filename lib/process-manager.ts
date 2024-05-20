@@ -444,40 +444,43 @@ export abstract class ProcessManager<T extends ProcessWrapper = ProcessWrapper> 
 		return lowestLoad;
 	}
 	releaseCrashed(process: T) {
-		const index = this.processes.indexOf(process);
+    const index = this.processes.indexOf(process);
 
-		// The process was shut down sanely, not crashed
-		if (index < 0) return;
+    // The process was shut down sanely, not crashed
+    if (index < 0) return;
 
-		this.processes.splice(index, 1);
+    this.processes.splice(index, 1);
 
-		this.destroyProcess(process);
-		void process.release().then(() => {
-			const releasingIndex = this.releasingProcesses.indexOf(process);
-			if (releasingIndex >= 0) {
-				this.releasingProcesses.splice(releasingIndex, 1);
-			}
-		});
+    this.destroyProcess(process);
+    void process.release().then(() => {
+        const releasingIndex = this.releasingProcesses.indexOf(process);
+        if (releasingIndex >= 0) {
+            this.releasingProcesses.splice(releasingIndex, 1);
+        }
+    });
 
-		const now = Date.now();
-		if (this.crashTime && now - this.crashTime > 30 * 60 * 1000) {
-			this.crashTime = 0;
-			this.crashRespawnCount = 0;
-		}
-		if (!this.crashTime) this.crashTime = now;
-		this.crashRespawnCount += 1;
-		// Notify any global crash logger
-		void Promise.reject(
-			new Error(`Process ${this.basename} ${process.getProcess().pid} crashed and had to be restarted`)
-		);
-		this.releasingProcesses.push(process);
-		this.crashedProcesses.push(process);
+    const now = Date.now();
+    if (this.crashTime && now - this.crashTime > 30 * 60 * 1000) {
+        this.crashTime = 0;
+        this.crashRespawnCount = 0;
+    }
+    if (!this.crashTime) this.crashTime = now;
+    this.crashRespawnCount += 1;
+    // Notify any global crash logger
+    if (!process.getProcess().exitedAfterDisconnect) {
+        process.getProcess().disconnect();
+    }
+    void Promise.reject(
+        new Error(`Process ${this.basename} ${process.getProcess().pid} crashed and had to be restarted`)
+    );
+    this.releasingProcesses.push(process);
+    this.crashedProcesses.push(process);
 
-		// only respawn processes if there have been fewer than 5 crashes in 30 minutes
-		if (this.crashRespawnCount <= 5) {
-			this.spawn(this.processes.length + 1);
-		}
-	}
+    // only respawn processes if there have been fewer than 5 crashes in 30 minutes
+    if (this.crashRespawnCount <= 5) {
+        this.spawn(this.processes.length + 1);
+    }
+}
 	unspawn() {
 		return Promise.all([...this.processes].map(
 			process => this.unspawnOne(process)
