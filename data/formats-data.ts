@@ -5964,6 +5964,11 @@ export const FormatsData: {[k: string]: SpeciesFormatsData} = {
 		isNonstandard: "CAP",
 		tier: "CAP",
 	},
+	dragoniteinsectoid:{
+		tier: "OU",
+		doublesTier: "DOU",
+		natDexTier: "OU",
+	},
 	pokestarsmeargle: {
 		isNonstandard: "Custom",
 		tier: "Illegal",
